@@ -5,6 +5,7 @@ const PORT = process.env.PORT;
 const CONNECTION_URL = process.env.CONNECTION_URL;
 const cors = require("cors");
 const mongoose = require("mongoose");
+const path = require("path");
 const colorRoutes = require("./routes/colorRoutes");
 
 (async () => {
@@ -12,11 +13,16 @@ const colorRoutes = require("./routes/colorRoutes");
     app.use(express.json());
     app.use(cors());
 
-    app.get("/", (req, res) => {
-      res.send("SWC-COLORS");
-    });
+    // app.get("/", (req, res) => {
+    //   res.send("SWC-COLORS");
+    // });
 
     app.use("/api/colors", colorRoutes);
+
+    app.use("/", express.static(path.join(__dirname, "frontend/dist")));
+    app.use(/(.*)/, (req, res) => {
+      res.sendFile(path.join(__dirname, "frontend/dist", "index.html"));
+    });
 
     await mongoose
       .connect(CONNECTION_URL)
