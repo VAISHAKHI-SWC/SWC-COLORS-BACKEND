@@ -24,6 +24,8 @@ const colorRoutes = require("./routes/colorRoutes");
       res.sendFile(path.join(__dirname, "frontend/dist", "index.html"));
     });
 
+    console.log(CONNECTION_URL);
+
     await mongoose
       .connect(CONNECTION_URL)
       .then(async () => {
