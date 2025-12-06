@@ -7,6 +7,7 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 const path = require("path");
 const colorRoutes = require("./routes/colorRoutes");
+const { error } = require("console");
 
 (async () => {
   try {
