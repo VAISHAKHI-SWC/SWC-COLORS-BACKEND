@@ -14,15 +14,15 @@ const { error } = require("console");
     app.use(express.json());
     app.use(cors());
 
-    app.get("/", (req, res) => {
-      res.send("SWC-COLORS");
-    });
+    // app.get("/", (req, res) => {
+    //   res.send("SWC-COLORS");
+    // });
 
     app.use("/api/colors", colorRoutes);
-    //  app.use("/", express.static(path.join(__dirname, "frontend/dist")));
-    //     app.use(/(.*)/, (req, res) => {
-    //       res.sendFile(path.join(__dirname, "frontend/dist", "index.html"));
-    //     });
+    app.use("/", express.static(path.join(__dirname, "frontend/dist")));
+    app.use(/(.*)/, (req, res) => {
+      res.sendFile(path.join(__dirname, "frontend/dist", "index.html"));
+    });
 
     console.log(CONNECTION_URL);
 
