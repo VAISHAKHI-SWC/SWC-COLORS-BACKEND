@@ -6,13 +6,22 @@ const colorSchema = new mongoose.Schema(
     theme: String,
     group: String,
     hex: String,
+    shades: {
+      type: Map,
+      of: String,
+    },
+
+    clickCount: {
+      type: Number,
+      default: 0,
+    },
 
     rgb: {
       r: Number,
       g: Number,
       b: Number,
     },
-
+    count: { type: Number },
     isActive: { type: Boolean, default: true },
     isDeleted: { type: Boolean, default: false },
   },

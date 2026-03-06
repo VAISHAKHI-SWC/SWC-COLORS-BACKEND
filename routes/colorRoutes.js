@@ -3,6 +3,47 @@ const { ColorModal } = require("../models/colors");
 
 const router = express.Router();
 
+const generateShades = (hex) => {
+  hex = hex.replace("#", "");
+
+  const toRGB = (h) => ({
+    r: parseInt(h.substring(0, 2), 16),
+    g: parseInt(h.substring(2, 4), 16),
+    b: parseInt(h.substring(4, 6), 16),
+  });
+
+  const toHex = ({ r, g, b }) =>
+    ((1 << 24) + (Math.round(r) << 16) + (Math.round(g) << 8) + Math.round(b))
+      .toString(16)
+      .slice(1);
+
+  const base = toRGB(hex);
+
+  const levels = {
+    100: 0.9,
+    200: 0.75,
+    300: 0.6,
+    400: 0.4,
+    500: 0,
+    600: -0.2,
+    700: -0.35,
+    800: -0.5,
+    900: -0.7,
+  };
+
+  const shades = {};
+
+  Object.entries(levels).forEach(([key, factor]) => {
+    shades[key] = toHex({
+      r: base.r + factor * (255 - base.r),
+      g: base.g + factor * (255 - base.g),
+      b: base.b + factor * (255 - base.b),
+    });
+  });
+
+  return shades;
+};
+
 // router.post("/create", async (req, res) => {
 //   try {
 //     const response = await fetch("https://csscolorsapi.com/api/colors");
@@ -36,12 +77,15 @@ router.post("/create", async (req, res) => {
   try {
     const { name, hex, theme, group, rgb, isActive } = req.body;
 
+    const shades = generateShades(hex);
+
     const newColor = new ColorModal({
       name,
       hex,
       theme,
       group,
       rgb: rgb || null,
+      shades,
       isActive: isActive ?? true,
       createdBy: req.userId,
       updatedBy: req.userId,
@@ -89,11 +133,11 @@ router.post("/create-gradient", async (req, res) => {
     // Save gradient object in DB
     const newGradient = new ColorModal({
       name: `Gradient ${grad1}-${grad2}`,
-      hex: mixedHex, // store the generated color
+      hex: mixedHex,
       theme: "Gradient",
       group: "Generated",
       rgb: null,
-      gradientColors: [grad1, grad2, mixedHex], // optional: store all colors
+      gradientColors: [grad1, grad2, mixedHex],
       isActive: true,
       createdBy: req.userId,
       updatedBy: req.userId,
@@ -160,6 +204,81 @@ router.get("/read", async (req, res) => {
       success: false,
       message: `Something went wrong on a server ${err}`,
       data: {},
+    });
+  }
+});
+
+router.get("/colorCount/:hex", async (req, res) => {
+  try {
+    // const { id } = req.params;
+
+    const color = await ColorModal.findOne(
+      { hex: req.params.hex.toLowerCase() },
+      { clickCount: 1 }
+    );
+
+    res.json({
+      success: true,
+      data: { clickCount: color?.clickCount || 0 },
+    });
+
+    if (!color) {
+      return res.status(404).json({
+        success: false,
+        message: "Color not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Color count fetched",
+      data: color,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: `Server error: ${err.message}`,
+    });
+  }
+});
+
+router.get("/colorCount", async (req, res) => {
+  try {
+    const colors = await ColorModal.find({}, { hex: 1, clickCount: 1 });
+    return res.status(200).json({
+      success: true,
+      data: colors, // array of { hex, clickCount }
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: `Server error: ${err.message}`,
+    });
+  }
+});
+
+// POST /colors/click
+router.post("/colorCount", async (req, res) => {
+  try {
+    const { hex } = req.body;
+
+    const color = await ColorModal.findOneAndUpdate(
+      { hex: hex.toLowerCase(), isDeleted: false },
+      { $inc: { clickCount: 1 } },
+      { new: true, upsert: true }
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        hex: color.hex,
+        clickCount: color.clickCount,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
     });
   }
 });
